@@ -15,36 +15,38 @@ if not cap.isOpened():
     print("Error: Could not open video stream or webcam.")
     exit()
 
-# --- 3. Using the background subtraction technique ---
-# Initialize the background subtractor (MOG2)
-# This will be used to create a binary mask of moving objects
+# --- 2. Initialize the Background Subtraction technique ---
+# Using MOG2 (Gaussian Mixture-based Background/Foreground Segmentation Algorithm)
 subbg = cv2.createBackgroundSubtractorMOG2()
 
 # --- Main loop to process each frame of the video ---
 while True:
-    # --- 2. Read each frame from the webcam or video ---
+    # --- 3. Read each frame from the webcam or video ---
     ret, frame = cap.read()
 
     # If the frame is not read correctly (e.g., end of video), break the loop
     if not ret:
         break
 
-    # Apply the background subtraction to the current frame
+    # --- 4. Apply background subtraction ---
     # This generates a binary mask where white pixels represent movement
     mask = subbg.apply(frame)
 
-    # --- 4. Noise reduction in the binary mask ---
+    # --- 5. Noise reduction in the binary mask ---
     # Erode the mask to remove small white pixels (noise)
     mask = cv2.erode(mask, None, iterations=2)
     # Dilate the mask to restore the size of the remaining white areas
     mask = cv2.dilate(mask, None, iterations=2)
 
-    # --- 5. Obtain the contours ---
+    # --- 6. Thresholding the mask ---
+    # Convert the mask to binary (threshold between 200 and 255)
+    _, mask = cv2.threshold(mask, 200, 255, cv2.THRESH_BINARY)
+
+    # --- 7. Obtain the contours ---
     # Find the contours (outlines) of the white areas in the mask
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    # --- 6. Draw the rectangles on the image and display the result ---
-    # Loop through each contour found
+    # --- 8. Draw rectangles on the original frame ---
     for contour in contours:
         # Filter out small contours to avoid detecting noise as objects
         if cv2.contourArea(contour) < 500:
@@ -55,6 +57,7 @@ while True:
         # Draw a green rectangle on the original frame
         cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
+    # --- 9. Display the results ---
     # Display the original video frame with the detected objects
     cv2.imshow('Video frame', frame)
     # Display the binary mask to visualize the detected movement
